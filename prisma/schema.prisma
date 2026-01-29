@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Servidores/Filiais
+model Server {
+  id        Int       @id @default(autoincrement())
+  name      String
+  serverNumber Int    @unique // Número único: 1, 2, 3...
+  isPrincipal Boolean  @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  clientes  Cliente[]
+  vendas    Venda[]
+  gastos    Gasto[]
+
+  @@index([isPrincipal])
+}
+
+// Clientes
+model Cliente {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  serverId  Int
+  server    Server    @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  
+  deletedAt DateTime? // Tombstone para sincronização
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  vendas    Venda[]
+  gastos    Gasto[]
+
+  @@index([serverId])
+  @@index([deletedAt])
+}
+
+// Vendas
+model Venda {
+  id        String    @id @default(cuid())
+  clienteId String
+  cliente   Cliente   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  
+  valor     Float
+  data      DateTime  @default(now())
+  descricao String?
+  
+  serverId  Int
+  server    Server    @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  
+  deletedAt DateTime? // Tombstone
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([clienteId])
+  @@index([serverId])
+  @@index([deletedAt])
+}
+
+// Gastos
+model Gasto {
+  id        String    @id @default(cuid())
+  descricao String
+  valor     Float
+  categoria String?
+  data      DateTime  @default(now())
+  
+  clienteId String?
+  cliente   Cliente?  @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  
+  serverId  Int
+  server    Server    @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  
+  deletedAt DateTime? // Tombstone
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([clienteId])
+  @@index([serverId])
+  @@index([deletedAt])
+}
+
+// Sincronização de histórico (rastreamento de mudanças)
+model SyncLog {
+  id        String    @id @default(cuid())
+  serverId  Int
+  entityType String   // "Cliente", "Venda", "Gasto"
+  entityId  String
+  operation String    // "CREATE", "UPDATE", "DELETE"
+  data      Json
+  timestamp DateTime  @default(now())
+
+  @@index([serverId])
+  @@index([timestamp])
+}
