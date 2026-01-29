@@ -6,7 +6,12 @@
   "deploy": {
     "startCommand": "npm start",
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 5
+    "restartPolicyMaxRetries": 5,
+    "healthchecks": {
+      "enabled": true,
+      "cpu": false,
+      "memory": false
+    }
   }
 }
 
