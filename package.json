@@ -1,0 +1,30 @@
+{
+  "name": "paes-caseiros-sync",
+  "version": "1.0.0",
+  "description": "Sistema de gestão de pães caseiros com sincronização em tempo real",
+  "main": "paes-server.js",
+  "scripts": {
+    "start": "node paes-server.js",
+    "dev": "nodemon paes-server.js",
+    "build": "echo 'Build complete'"
+  },
+  "keywords": [
+    "paes",
+    "gestao",
+    "websocket",
+    "sync"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

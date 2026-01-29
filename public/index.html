@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Pães Caseiros - Sincronizado</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8f6f3 0%, #faf8f5 100%);
+            min-height: 100vh;
+            padding: 10px;
+            color: #2d2d2d;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #d8956e 0%, #c88156 50%, #d4996c 100%);
+            color: white;
+            padding: 35px 20px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(216, 149, 110, 0.15);
+        }
+
+        header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.95;
+            font-weight: 300;
+            letter-spacing: 0.3px;
+        }
+
+        .header-right {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .sync-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 16px;
+            border-radius: 25px;
+            font-size: 12px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        .sync-dot.offline {
+            background: #f87171;
+            box-shadow: 0 0 8px rgba(248, 113, 113, 0.6);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+        }
+
+        .btn-sync {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-sync:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        nav {
+            display: flex;
+            gap: 8px;
+            padding: 20px;
+            background: linear-gradient(to right, #faf8f5, #f5f3f0);
+            flex-wrap: wrap;
+            justify-content: center;
+            border-bottom: 1px solid #f0ebe3;
+        }
+
+        .nav-btn {
+            padding: 12px 20px;
+            border: 2px solid transparent;
+            background: white;
+            color: #666;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .nav-btn:hover {
+            background: #fff8f0;
+            color: #d8956e;
+            border-color: #e8d5c4;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #d8956e, #c88156);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 8px 20px rgba(216, 149, 110, 0.25);
+        }
+
+        .content {
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d2d2d;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 13px 16px;
+            border: 2px solid #f0ebe3;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: #fafaf8;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #d8956e;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(216, 149, 110, 0.08);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            padding: 13px 28px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 12px;
+            margin-bottom: 12px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #d8956e, #c88156);
+            color: white;
+            box-shadow: 0 4px 15px rgba(216, 149, 110, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #cf8c63, #bf794d);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(216, 149, 110, 0.35);
+        }
+
+        .btn-secondary {
+            background: #f0ebe3;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #e8dfd5;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef6b7e, #e74c5c);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 107, 126, 0.2);
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #e85d70, #d93d4e);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.25);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #3cd472, #16a34a);
+        }
+
+        .btn-small {
+            padding: 8px 14px;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin: 25px 0;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: linear-gradient(135deg, #f5f3f0, #f0ebe3);
+            color: #2d2d2d;
+            padding: 16px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e8dfd5;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #f0ebe3;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #faf8f5;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #faf8f5, #f5f3f0);
+            border-left: 4px solid #d8956e;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        }
+
+        .card-title {
+            font-weight: 700;
+            color: #2d2d2d;
+            margin-bottom: 10px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #d8956e;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #fdfcfb, #faf8f5);
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0ebe3;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(216, 149, 110, 0.15);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #d8956e;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            color: #065f46;
+            border-color: #4ade80;
+        }
+
+        .alert-danger {
+            background: #fef2f2;
+            color: #7f1d1d;
+            border-color: #ef6b7e;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            color: #1e40af;
+            border-color: #d8956e;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 550px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: #2d2d2d;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 28px;
+            font-weight: 300;
+            cursor: pointer;
+            color: #bbb;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: #d8956e;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #bbb;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+
+        .whatsapp-btn {
+            background: #25d366 !important;
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.2) !important;
+        }
+
+        .whatsapp-btn:hover {
+            background: #20ba5a !important;
+        }
+
+        .filter-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .chart-container {
+            margin: 30px 0;
+            padding: 25px;
+            background: linear-gradient(135deg, #faf8f5, #f5f3f0);
+            border-radius: 16px;
+            border: 1px solid #f0ebe3;
+        }
+
+        .chart-title {
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #2d2d2d;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            height: 220px;
+            margin: 30px 0;
+        }
+
+        .bar {
+            flex: 1;
+            background: linear-gradient(180deg, #d8956e, #c88156);
+            border-radius: 12px 12px 0 0;
+            position: relative;
+            min-height: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(216, 149, 110, 0.2);
+        }
+
+        .bar:hover {
+            filter: brightness(1.1);
+            transform: translateY(-5px);
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-weight: 700;
+            color: #d8956e;
+            font-size: 13px;
+        }
+
+        .currency {
+            color: #4ade80;
+            font-weight: 700;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 30px;
+            color: #bbb;
+            font-style: italic;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-primary {
+            background: linear-gradient(135deg, #d8956e, #c88156);
+            color: white;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+
+        .section-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #2d2d2d;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #d8956e;
+            padding-bottom: 15px;
+            font-family: 'Poppins', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        /* Sincronização - Nova interface */
+        .sync-section {
+            background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+            border: 2px solid #d8956e;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+        }
+
+        .sync-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .sync-status-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #f0ebe3;
+        }
+
+        .sync-status-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .sync-status-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #d8956e;
+        }
+
+        .qr-container {
+            text-align: center;
+            padding: 30px;
+            background: white;
+            border-radius: 16px;
+            margin: 20px 0;
+            border: 2px dashed #f0ebe3;
+        }
+
+        #qrcode {
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 24px;
+            }
+
+            header {
+                padding: 25px 15px;
+            }
+
+            nav {
+                flex-direction: column;
+            }
+
+            .nav-btn {
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            th, td {
+                padding: 12px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                margin-right: 0;
+            }
+
+            .header-right {
+                position: static;
+                flex-direction: column;
+                margin-top: 15px;
+                gap: 10px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .modal-content {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🥖 Gestão de Pães Caseiros</h1>
+            <p>Controle de vendas, clientes e gastos - Sincronizado</p>
+            <div class="header-right">
+                <div class="sync-indicator">
+                    <div class="sync-dot" id="syncDot"></div>
+                    <span id="syncStatus">Carregando...</span>
+                </div>
+                <button class="btn-sync" onclick="abrirSincronizacao()">🔄 Sincronizar</button>
+            </div>
+        </header>
+
+        <nav>
+            <button class="nav-btn active" onclick="showSection('dashboard')">📊 Dashboard</button>
+            <button class="nav-btn" onclick="showSection('clientes')">👥 Clientes</button>
+            <button class="nav-btn" onclick="showSection('vendas')">💰 Vendas</button>
+            <button class="nav-btn" onclick="showSection('gastos')">💸 Gastos</button>
+            <button class="nav-btn" onclick="showSection('relatorios')">📈 Relatórios</button>
+            <button class="nav-btn" onclick="showSection('sincronizacao')">🔗 Sincronização</button>
+            <button class="nav-btn" onclick="showSection('configuracoes')">⚙️ Configurações</button>
+        </nav>
+
+        <div class="content">
+            <!-- SINCRONIZAÇÃO -->
+            <div id="sincronizacao" class="section">
+                <div class="section-title">🔗 Sincronização de Dispositivos</div>
+                
+                <div class="sync-section">
+                    <div class="sync-status">
+                        <div class="sync-status-item">
+                            <div class="sync-status-label">Status</div>
+                            <div class="sync-status-value" id="statusConexao">Desconectado</div>
+                        </div>
+                        <div class="sync-status-item">
+                            <div class="sync-status-label">Sala</div>
+                            <div class="sync-status-value" id="codigoSalaDisplay">-</div>
+                        </div>
+                        <div class="sync-status-item">
+                            <div class="sync-status-label">Dispositivos Conectados</div>
+                            <div class="sync-status-value" id="dispositivosConectados">0</div>
+                        </div>
+                    </div>
+
+                    <div style="margin: 20px 0;">
+                        <h3 style="margin-bottom: 15px;">Conectar novo dispositivo:</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Código da Sala</label>
+                                <input type="text" id="codigoSalaInput" placeholder="Ex: ABC123" style="text-transform: uppercase;">
+                            </div>
+                            <div class="form-group">
+                                <label>Nome do Dispositivo</label>
+                                <input type="text" id="nomeDispositivo" placeholder="Ex: Celular João">
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="conectarSala()">Conectar</button>
+                    </div>
+
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #0c5460;">
+                        <h3 style="margin-bottom: 15px;">Ou crie uma nova sala:</h3>
+                        <button class="btn btn-primary" onclick="criarNovaSala()">➕ Criar Nova Sala</button>
+                    </div>
+
+                    <div id="qrContainer" class="qr-container" style="display: none;">
+                        <p style="margin-bottom: 15px;">Escaneie este código QR com outro dispositivo:</p>
+                        <div id="qrcode"></div>
+                        <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                            Código: <strong id="codigoExibido" style="font-size: 18px;"></strong>
+                        </p>
+                    </div>
+
+                    <div id="dispositivosLista" style="margin-top: 30px;"></div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div id="dashboard" class="section active">
+                <div class="section-title">Dashboard</div>
+                <div class="stats-grid" id="statsGrid"></div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">Vendas dos Últimos 7 Dias</div>
+                    <div class="bar-chart" id="chartVendas"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Formas de Pagamento</div>
+                    <div id="chartPagamento"></div>
+                </div>
+            </div>
+
+            <!-- CLIENTES -->
+            <div id="clientes" class="section">
+                <div class="section-title">Gestão de Clientes</div>
+                
+                <button class="btn btn-primary" onclick="openClientModal()">➕ Novo Cliente</button>
+                
+                <input type="text" id="searchCliente" placeholder="🔍 Buscar cliente..." style="margin: 15px 0;">
+                
+                <div class="table-responsive">
+                    <table id="clientesTable">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>WhatsApp</th>
+                                <th>Endereço</th>
+                                <th>Observações</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientesList"></tbody>
+                    </table>
+                </div>
+                <div id="clientesEmpty" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">👥</div>
+                    <p>Nenhum cliente cadastrado ainda</p>
+                </div>
+            </div>
+
+            <!-- VENDAS -->
+            <div id="vendas" class="section">
+                <div class="section-title">Registro de Vendas</div>
+                
+                <button class="btn btn-primary" onclick="openVendaModal()">➕ Nova Venda</button>
+                
+                <div class="filter-group">
+                    <input type="date" id="filterDataVenda" onchange="atualizarVendas()">
+                    <select id="filterClienteVenda" onchange="atualizarVendas()">
+                        <option value="">Todos os clientes</option>
+                    </select>
+                    <select id="filterPagamentoVenda" onchange="atualizarVendas()">
+                        <option value="">Todas as formas de pagamento</option>
+                        <option value="pix">Pix</option>
+                        <option value="dinheiro">Dinheiro</option>
+                        <option value="cartao">Cartão</option>
+                        <option value="fiado">Fiado</option>
+                    </select>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="vendasTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Cliente</th>
+                                <th>Produto</th>
+                                <th>Qtd</th>
+                                <th>Valor Unit.</th>
+                                <th>Total</th>
+                                <th>Pagamento</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendasList"></tbody>
+                    </table>
+                </div>
+                <div id="vendasEmpty" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">💰</div>
+                    <p>Nenhuma venda registrada ainda</p>
+                </div>
+            </div>
+
+            <!-- GASTOS -->
+            <div id="gastos" class="section">
+                <div class="section-title">Controle de Gastos</div>
+                
+                <button class="btn btn-primary" onclick="openGastoModal()">➕ Novo Gasto</button>
+                
+                <div class="filter-group">
+                    <input type="date" id="filterDataGasto" onchange="atualizarGastos()">
+                    <select id="filterTipoGasto" onchange="atualizarGastos()">
+                        <option value="">Todos os tipos</option>
+                        <option value="ingredientes">Ingredientes</option>
+                        <option value="gas">Gás</option>
+                        <option value="embalagens">Embalagens</option>
+                        <option value="transporte">Transporte</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="gastosTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Observações</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gastosList"></tbody>
+                    </table>
+                </div>
+                <div id="gastosEmpty" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">💸</div>
+                    <p>Nenhum gasto registrado ainda</p>
+                </div>
+            </div>
+
+            <!-- RELATÓRIOS -->
+            <div id="relatorios" class="section">
+                <div class="section-title">Relatórios</div>
+                
+                <div class="filter-group">
+                    <select id="filterPeriodo" onchange="atualizarRelatorios()">
+                        <option value="dia">Hoje</option>
+                        <option value="semana">Esta Semana</option>
+                        <option value="mes">Este Mês</option>
+                        <option value="todos">Todos os Períodos</option>
+                    </select>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total de Vendas</div>
+                        <div class="stat-value" id="relTotalVendas">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total de Gastos</div>
+                        <div class="stat-value" id="relTotalGastos">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Lucro Líquido</div>
+                        <div class="stat-value" id="relLucro">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Margem de Lucro</div>
+                        <div class="stat-value" id="relMargem">0%</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Vendas por Forma de Pagamento</div>
+                    <div id="relPagamento"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Clientes que Mais Compram</div>
+                    <div id="relClientes"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Gastos por Tipo</div>
+                    <div id="relGastos"></div>
+                </div>
+
+                <div class="export-buttons">
+                    <button class="btn btn-success" onclick="exportarPDF()">📄 Exportar PDF</button>
+                    <button class="btn btn-success" onclick="exportarExcel()">📊 Exportar Excel</button>
+                </div>
+            </div>
+
+            <!-- CONFIGURAÇÕES -->
+            <div id="configuracoes" class="section">
+                <div class="section-title">Configurações</div>
+                
+                <div class="card">
+                    <div class="card-title">Backup e Restauração</div>
+                    <button class="btn btn-primary" onclick="fazerBackup()">💾 Fazer Backup</button>
+                    <button class="btn btn-secondary" onclick="restaurarBackup()">📂 Restaurar Backup</button>
+                    <input type="file" id="backupFile" accept=".json" style="display: none;">
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Dados</div>
+                    <p style="margin-bottom: 15px; color: #666;">
+                        Clientes: <strong id="countClientes">0</strong> | 
+                        Vendas: <strong id="countVendas">0</strong> | 
+                        Gastos: <strong id="countGastos">0</strong>
+                    </p>
+                    <button class="btn btn-danger" onclick="limparTodosDados()">🗑️ Limpar Todos os Dados</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Informações</div>
+                    <p>Versão: 2.0 - Sincronizado</p>
+                    <p>Aplicativo para gestão de pães caseiros com sincronização em tempo real</p>
+                    <p style="margin-top: 10px; color: #999; font-size: 12px;">
+                        Todos os dados são sincronizados entre dispositivos conectados à mesma sala
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CLIENTE -->
+    <div id="modalCliente" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeClientModal()">×</button>
+            <div class="modal-header">
+                <span id="modalClienteTitle">Novo Cliente</span>
+            </div>
+            <form onsubmit="salvarCliente(event)">
+                <div class="form-group">
+                    <label>Nome *</label>
+                    <input type="text" id="clienteNome" required>
+                </div>
+                <div class="form-group">
+                    <label>WhatsApp *</label>
+                    <input type="tel" id="clienteWhatsapp" placeholder="11999999999" required>
+                </div>
+                <div class="form-group">
+                    <label>Endereço</label>
+                    <input type="text" id="clienteEndereco">
+                </div>
+                <div class="form-group">
+                    <label>Observações</label>
+                    <textarea id="clienteObservacoes"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <button type="button" class="btn btn-secondary" onclick="closeClientModal()">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL VENDA -->
+    <div id="modalVenda" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeVendaModal()">×</button>
+            <div class="modal-header">
+                <span id="modalVendaTitle">Nova Venda</span>
+            </div>
+            <form onsubmit="salvarVenda(event)">
+                <div class="form-group">
+                    <label>Cliente *</label>
+                    <select id="vendaCliente" required>
+                        <option value="">Selecione um cliente</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Produto (Tipo de Pão) *</label>
+                    <input type="text" id="vendaProduto" placeholder="Ex: Pão Francês, Broa, etc" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Quantidade *</label>
+                        <input type="number" id="vendaQuantidade" min="1" step="0.5" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Valor Unitário *</label>
+                        <input type="number" id="vendaValor" min="0" step="0.01" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Forma de Pagamento *</label>
+                    <select id="vendaPagamento" required>
+                        <option value="">Selecione</option>
+                        <option value="pix">Pix</option>
+                        <option value="dinheiro">Dinheiro</option>
+                        <option value="cartao">Cartão</option>
+                        <option value="fiado">Fiado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Data *</label>
+                    <input type="date" id="vendaData" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <button type="button" class="btn btn-secondary" onclick="closeVendaModal()">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL GASTO -->
+    <div id="modalGasto" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeGastoModal()">×</button>
+            <div class="modal-header">
+                <span id="modalGastoTitle">Novo Gasto</span>
+            </div>
+            <form onsubmit="salvarGasto(event)">
+                <div class="form-group">
+                    <label>Tipo de Gasto *</label>
+                    <select id="gastoTipo" required>
+                        <option value="">Selecione</option>
+                        <option value="ingredientes">Ingredientes</option>
+                        <option value="gas">Gás</option>
+                        <option value="embalagens">Embalagens</option>
+                        <option value="transporte">Transporte</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Valor *</label>
+                    <input type="number" id="gastoValor" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Data *</label>
+                    <input type="date" id="gastoData" required>
+                </div>
+                <div class="form-group">
+                    <label>Observações</label>
+                    <textarea id="gastoObservacoes"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <button type="button" class="btn btn-secondary" onclick="closeGastoModal()">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ===== CONFIGURAÇÃO DE SINCRONIZAÇÃO =====
+        let ws = null;
+        let codigoSala = null;
+        let deviceId = null;
+        let dispositivoNome = null;
+
+        // Inicializar ID do dispositivo
+        function inicializarDispositivo() {
+            deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device-' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            
+            dispositivoNome = localStorage.getItem('dispositivoNome') || 'Dispositivo ' + deviceId.slice(-5);
+            
+            codigoSala = localStorage.getItem('codigoSala');
+            if (codigoSala) {
+                conectarAoServidor();
+            }
+        }
+
+        // Conectar ao servidor WebSocket
+        function conectarAoServidor() {
+            if (!ws || ws.readyState === WebSocket.CLOSED) {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                ws = new WebSocket(protocol + '//' + window.location.host);
+
+                ws.onopen = () => {
+                    console.log('Conectado ao servidor WebSocket');
+                    if (codigoSala) {
+                        entrarSala(codigoSala);
+                    }
+                    atualizarStatusSync('online');
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        if (data.type === 'sync') {
+                            console.log('Dados sincronizados:', data.data);
+                            app.restaurarDados(data.data);
+                            atualizarTodasAsSecoes();
+                            if (data.clients) {
+                                document.getElementById('dispositivosConectados').textContent = data.clients;
+                            }
+                        } else if (data.type === 'user-joined') {
+                            document.getElementById('dispositivosConectados').textContent = data.clients;
+                            showNotification(`Novo dispositivo conectado! (${data.clients} dispositivos)`, 'info');
+                        } else if (data.type === 'user-left') {
+                            document.getElementById('dispositivosConectados').textContent = data.clients;
+                            showNotification(`Um dispositivo foi desconectado (${data.clients} restantes)`, 'info');
+                        }
+                    } catch (error) {
+                        console.error('Erro ao processar mensagem:', error);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.error('Erro WebSocket:', error);
+                    atualizarStatusSync('offline');
+                };
+
+                ws.onclose = () => {
+                    console.log('Desconectado do servidor');
+                    atualizarStatusSync('offline');
+                    // Tentar reconectar em 5 segundos
+                    setTimeout(conectarAoServidor, 5000);
+                };
+            }
+        }
+
+        function atualizarStatusSync(status) {
+            const dot = document.getElementById('syncDot');
+            const statusText = document.getElementById('syncStatus');
+            
+            if (status === 'online') {
+                dot.classList.remove('offline');
+                statusText.textContent = 'Sincronizado';
+                if (codigoSala) {
+                    statusText.textContent = `Sala: ${codigoSala}`;
+                }
+            } else {
+                dot.classList.add('offline');
+                statusText.textContent = 'Desconectado';
+            }
+        }
+
+        // ===== FUNÇÕES DE SINCRONIZAÇÃO =====
+        function criarNovaSala() {
+            codigoSala = Math.random().toString(36).substring(2, 8).toUpperCase();
+            localStorage.setItem('codigoSala', codigoSala);
+            document.getElementById('codigoSalaDisplay').textContent = codigoSala;
+            document.getElementById('codigoSalaInput').value = codigoSala;
+            document.getElementById('codigoExibido').textContent = codigoSala;
+            
+            // Gerar QR Code
+            document.getElementById('qrContainer').style.display = 'block';
+            gerarQRCode(codigoSala);
+            
+            conectarAoServidor();
+            entrarSala(codigoSala);
+            showNotification(`Sala criada: ${codigoSala}`, 'success');
+        }
+
+        function conectarSala() {
+            const codigo = document.getElementById('codigoSalaInput').value.toUpperCase();
+            const nome = document.getElementById('nomeDispositivo').value || 'Dispositivo';
+            
+            if (!codigo) {
+                showNotification('Digite o código da sala!', 'danger');
+                return;
+            }
+            
+            codigoSala = codigo;
+            dispositivoNome = nome;
+            localStorage.setItem('codigoSala', codigoSala);
+            localStorage.setItem('dispositivoNome', dispositivoNome);
+            document.getElementById('codigoSalaDisplay').textContent = codigoSala;
+            
+            conectarAoServidor();
+            entrarSala(codigoSala);
+            showNotification(`Conectado à sala ${codigoSala}!`, 'success');
+        }
+
+        function entrarSala(sala) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'join-room',
+                    room: sala
+                }));
+                atualizarStatusSync('online');
+            }
+        }
+
+        function enviarDados(dados) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'update',
+                    data: dados
+                }));
+            }
+        }
+
+        function gerarQRCode(codigo) {
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            const urlQR = `${window.location.origin}?sala=${codigo}`;
+            new QRCode(qrContainer, {
+                text: urlQR,
+                width: 200,
+                height: 200,
+                colorDark: "#d8956e",
+                colorLight: "#ffffff",
+            });
+        }
+
+        function abrirSincronizacao() {
+            showSection('sincronizacao');
+        }
+
+        // ===== GERENCIAMENTO DE DADOS =====
+        class AppData {
+            constructor() {
+                this.clientes = this.load('clientes') || [];
+                this.vendas = this.load('vendas') || [];
+                this.gastos = this.load('gastos') || [];
+            }
+
+            load(key) {
+                try {
+                    return JSON.parse(localStorage.getItem(key));
+                } catch (e) {
+                    console.error('Erro ao carregar dados:', e);
+                    return null;
+                }
+            }
+
+            save(key, data) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(data));
+                    this.sincronizar();
+                } catch (e) {
+                    console.error('Erro ao salvar dados:', e);
+                    alert('Erro ao salvar dados. Verifique o espaço disponível.');
+                }
+            }
+
+            sincronizar() {
+                if (ws && ws.readyState === WebSocket.OPEN && codigoSala) {
+                    enviarDados({
+                        clientes: this.clientes,
+                        vendas: this.vendas,
+                        gastos: this.gastos
+                    });
+                }
+            }
+
+            restaurarDados(dados) {
+                this.clientes = dados.clientes || [];
+                this.vendas = dados.vendas || [];
+                this.gastos = dados.gastos || [];
+                localStorage.setItem('clientes', JSON.stringify(this.clientes));
+                localStorage.setItem('vendas', JSON.stringify(this.vendas));
+                localStorage.setItem('gastos', JSON.stringify(this.gastos));
+            }
+
+            addCliente(cliente) {
+                cliente.id = Date.now();
+                this.clientes.push(cliente);
+                this.save('clientes', this.clientes);
+                return cliente;
+            }
+
+            updateCliente(id, cliente) {
+                const index = this.clientes.findIndex(c => c.id === id);
+                if (index !== -1) {
+                    this.clientes[index] = { ...this.clientes[index], ...cliente, id };
+                    this.save('clientes', this.clientes);
+                }
+            }
+
+            deleteCliente(id) {
+                this.clientes = this.clientes.filter(c => c.id !== id);
+                this.save('clientes', this.clientes);
+            }
+
+            addVenda(venda) {
+                venda.id = Date.now();
+                this.vendas.push(venda);
+                this.save('vendas', this.vendas);
+                return venda;
+            }
+
+            updateVenda(id, venda) {
+                const index = this.vendas.findIndex(v => v.id === id);
+                if (index !== -1) {
+                    this.vendas[index] = { ...this.vendas[index], ...venda, id };
+                    this.save('vendas', this.vendas);
+                }
+            }
+
+            deleteVenda(id) {
+                this.vendas = this.vendas.filter(v => v.id !== id);
+                this.save('vendas', this.vendas);
+            }
+
+            addGasto(gasto) {
+                gasto.id = Date.now();
+                this.gastos.push(gasto);
+                this.save('gastos', this.gastos);
+                return gasto;
+            }
+
+            updateGasto(id, gasto) {
+                const index = this.gastos.findIndex(g => g.id === id);
+                if (index !== -1) {
+                    this.gastos[index] = { ...this.gastos[index], ...gasto, id };
+                    this.save('gastos', this.gastos);
+                }
+            }
+
+            deleteGasto(id) {
+                this.gastos = this.gastos.filter(g => g.id !== id);
+                this.save('gastos', this.gastos);
+            }
+
+            getClienteNome(id) {
+                const cliente = this.clientes.find(c => c.id === parseInt(id));
+                return cliente ? cliente.nome : 'Cliente desconhecido';
+            }
+
+            getClienteWhatsapp(id) {
+                const cliente = this.clientes.find(c => c.id === parseInt(id));
+                return cliente ? cliente.whatsapp : null;
+            }
+
+            clear() {
+                this.clientes = [];
+                this.vendas = [];
+                this.gastos = [];
+                this.save('clientes', []);
+                this.save('vendas', []);
+                this.save('gastos', []);
+            }
+
+            backup() {
+                return {
+                    clientes: this.clientes,
+                    vendas: this.vendas,
+                    gastos: this.gastos,
+                    data: new Date().toISOString()
+                };
+            }
+
+            restore(data) {
+                this.restaurarDados(data);
+            }
+        }
+
+        const app = new AppData();
+
+        // ===== FUNÇÕES DE NAVEGAÇÃO =====
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (sectionId === 'dashboard') {
+                atualizarDashboard();
+            } else if (sectionId === 'clientes') {
+                atualizarClientes();
+            } else if (sectionId === 'vendas') {
+                atualizarVendas();
+            } else if (sectionId === 'gastos') {
+                atualizarGastos();
+            } else if (sectionId === 'relatorios') {
+                atualizarRelatorios();
+            } else if (sectionId === 'sincronizacao') {
+                atualizarSincronizacao();
+            } else if (sectionId === 'configuracoes') {
+                atualizarConfiguracoes();
+            }
+        }
+
+        function atualizarTodasAsSecoes() {
+            atualizarClientes();
+            atualizarVendas();
+            atualizarGastos();
+            atualizarDashboard();
+            atualizarConfiguracoes();
+        }
+
+        function atualizarSincronizacao() {
+            document.getElementById('statusConexao').textContent = socket && socket.connected ? 'Conectado' : 'Desconectado';
+            document.getElementById('codigoSalaDisplay').textContent = codigoSala || '-';
+            document.getElementById('dispositivosConectados').textContent = '1';
+        }
+
+        // ===== DASHBOARD =====
+        function atualizarDashboard() {
+            const hoje = new Date().toISOString().split('T')[0];
+            const vendasHoje = app.vendas.filter(v => v.data === hoje);
+            const totalVendas = vendasHoje.reduce((sum, v) => sum + (v.quantidade * v.valor), 0);
+            
+            const gastosHoje = app.gastos.filter(g => g.data === hoje);
+            const totalGastos = gastosHoje.reduce((sum, g) => sum + g.valor, 0);
+
+            const stats = `
+                <div class="stat-card">
+                    <div class="stat-label">Vendas Hoje</div>
+                    <div class="stat-value">R$ ${totalVendas.toFixed(2)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Gastos Hoje</div>
+                    <div class="stat-value">R$ ${totalGastos.toFixed(2)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Lucro Hoje</div>
+                    <div class="stat-value" style="color: ${totalVendas - totalGastos >= 0 ? '#27ae60' : '#e74c3c'}">
+                        R$ ${(totalVendas - totalGastos).toFixed(2)}
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total de Clientes</div>
+                    <div class="stat-value">${app.clientes.length}</div>
+                </div>
+            `;
+            document.getElementById('statsGrid').innerHTML = stats;
+
+            // Gráfico de vendas últimos 7 dias
+            const ultimos7Dias = [];
+            for (let i = 6; i >= 0; i--) {
+                const data = new Date();
+                data.setDate(data.getDate() - i);
+                ultimos7Dias.push(data.toISOString().split('T')[0]);
+            }
+
+            const vendas7Dias = ultimos7Dias.map(data => {
+                const vendas = app.vendas.filter(v => v.data === data);
+                return vendas.reduce((sum, v) => sum + (v.quantidade * v.valor), 0);
+            });
+
+            const maxVenda = Math.max(...vendas7Dias, 1);
+            const chart = ultimos7Dias.map((data, i) => {
+                const altura = (vendas7Dias[i] / maxVenda) * 100;
+                const dataObj = new Date(data + 'T00:00:00');
+                const dia = dataObj.toLocaleDateString('pt-BR', { weekday: 'short' });
+                return `
+                    <div class="bar" style="height: ${Math.max(altura, 5)}%">
+                        <div class="bar-value">R$ ${vendas7Dias[i].toFixed(0)}</div>
+                        <div class="bar-label">${dia}</div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('chartVendas').innerHTML = chart;
+
+            // Gráfico de pagamento
+            const pagamentos = {};
+            app.vendas.forEach(v => {
+                pagamentos[v.pagamento] = (pagamentos[v.pagamento] || 0) + (v.quantidade * v.valor);
+            });
+
+            const chartPag = Object.entries(pagamentos).map(([tipo, valor]) => {
+                const labels = { pix: 'Pix', dinheiro: 'Dinheiro', cartao: 'Cartão', fiado: 'Fiado' };
+                return `<div class="card">
+                    <div class="card-title">${labels[tipo] || tipo}</div>
+                    <div class="card-value">R$ ${valor.toFixed(2)}</div>
+                </div>`;
+            }).join('');
+            document.getElementById('chartPagamento').innerHTML = chartPag || '<div class="no-data">Sem dados</div>';
+        }
+
+        // ===== CLIENTES =====
+        function atualizarClientes() {
+            const search = document.getElementById('searchCliente')?.value.toLowerCase() || '';
+            const clientes = app.clientes.filter(c => 
+                c.nome.toLowerCase().includes(search) || 
+                c.whatsapp.includes(search)
+            );
+
+            if (clientes.length === 0) {
+                document.getElementById('clientesList').innerHTML = '';
+                document.getElementById('clientesEmpty').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('clientesEmpty').style.display = 'none';
+            const html = clientes.map(c => `
+                <tr>
+                    <td>${c.nome}</td>
+                    <td>${c.whatsapp}</td>
+                    <td>${c.endereco || '-'}</td>
+                    <td>${c.observacoes || '-'}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn btn-small btn-primary" onclick="editarCliente(${c.id})">Editar</button>
+                            <a href="https://wa.me/55${c.whatsapp.replace(/\D/g, '')}" target="_blank" class="btn btn-small whatsapp-btn">WhatsApp</a>
+                            <button class="btn btn-small btn-danger" onclick="deletarCliente(${c.id})">Deletar</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('clientesList').innerHTML = html;
+
+            // Atualizar select de clientes
+            const select = document.getElementById('vendaCliente');
+            if (select) {
+                const selected = select.value;
+                select.innerHTML = '<option value="">Selecione um cliente</option>' +
+                    app.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+                select.value = selected;
+            }
+
+            atualizarCounters();
+        }
+
+        function openClientModal() {
+            document.getElementById('clienteNome').value = '';
+            document.getElementById('clienteWhatsapp').value = '';
+            document.getElementById('clienteEndereco').value = '';
+            document.getElementById('clienteObservacoes').value = '';
+            document.getElementById('modalClienteTitle').textContent = 'Novo Cliente';
+            document.getElementById('modalCliente').classList.add('active');
+            document.getElementById('modalCliente').dataset.id = '';
+        }
+
+        function closeClientModal() {
+            document.getElementById('modalCliente').classList.remove('active');
+        }
+
+        function salvarCliente(e) {
+            e.preventDefault();
+            const id = document.getElementById('modalCliente').dataset.id;
+            const cliente = {
+                nome: document.getElementById('clienteNome').value,
+                whatsapp: document.getElementById('clienteWhatsapp').value,
+                endereco: document.getElementById('clienteEndereco').value,
+                observacoes: document.getElementById('clienteObservacoes').value
+            };
+
+            if (id) {
+                app.updateCliente(parseInt(id), cliente);
+            } else {
+                app.addCliente(cliente);
+            }
+
+            closeClientModal();
+            atualizarClientes();
+            showNotification('Cliente salvo com sucesso!', 'success');
+        }
+
+        function editarCliente(id) {
+            const cliente = app.clientes.find(c => c.id === id);
+            if (!cliente) return;
+
+            document.getElementById('clienteNome').value = cliente.nome;
+            document.getElementById('clienteWhatsapp').value = cliente.whatsapp;
+            document.getElementById('clienteEndereco').value = cliente.endereco || '';
+            document.getElementById('clienteObservacoes').value = cliente.observacoes || '';
+            document.getElementById('modalClienteTitle').textContent = 'Editar Cliente';
+            document.getElementById('modalCliente').classList.add('active');
+            document.getElementById('modalCliente').dataset.id = id;
+        }
+
+        function deletarCliente(id) {
+            if (confirm('Tem certeza que deseja deletar este cliente?')) {
+                app.deleteCliente(id);
+                atualizarClientes();
+                showNotification('Cliente deletado!', 'success');
+            }
+        }
+
+        // ===== VENDAS =====
+        function atualizarVendas() {
+            const dataFilter = document.getElementById('filterDataVenda')?.value || '';
+            const clienteFilter = document.getElementById('filterClienteVenda')?.value || '';
+            const pagamentoFilter = document.getElementById('filterPagamentoVenda')?.value || '';
+
+            let vendas = app.vendas;
+            if (dataFilter) vendas = vendas.filter(v => v.data === dataFilter);
+            if (clienteFilter) vendas = vendas.filter(v => v.cliente === parseInt(clienteFilter));
+            if (pagamentoFilter) vendas = vendas.filter(v => v.pagamento === pagamentoFilter);
+
+            if (vendas.length === 0) {
+                document.getElementById('vendasList').innerHTML = '';
+                document.getElementById('vendasEmpty').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('vendasEmpty').style.display = 'none';
+            const html = vendas.map(v => {
+                const total = v.quantidade * v.valor;
+                const labels = { pix: 'Pix', dinheiro: 'Dinheiro', cartao: 'Cartão', fiado: 'Fiado' };
+                return `
+                    <tr>
+                        <td>${new Date(v.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                        <td>${app.getClienteNome(v.cliente)}</td>
+                        <td>${v.produto}</td>
+                        <td>${v.quantidade}</td>
+                        <td>R$ ${v.valor.toFixed(2)}</td>
+                        <td><strong>R$ ${total.toFixed(2)}</strong></td>
+                        <td><span class="badge badge-primary">${labels[v.pagamento]}</span></td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn btn-small btn-primary" onclick="editarVenda(${v.id})">Editar</button>
+                                <button class="btn btn-small btn-danger" onclick="deletarVenda(${v.id})">Deletar</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            document.getElementById('vendasList').innerHTML = html;
+            atualizarCounters();
+        }
+
+        function openVendaModal() {
+            document.getElementById('vendaCliente').value = '';
+            document.getElementById('vendaProduto').value = '';
+            document.getElementById('vendaQuantidade').value = '';
+            document.getElementById('vendaValor').value = '';
+            document.getElementById('vendaPagamento').value = '';
+            document.getElementById('vendaData').value = new Date().toISOString().split('T')[0];
+            document.getElementById('modalVendaTitle').textContent = 'Nova Venda';
+            document.getElementById('modalVenda').classList.add('active');
+            document.getElementById('modalVenda').dataset.id = '';
+        }
+
+        function closeVendaModal() {
+            document.getElementById('modalVenda').classList.remove('active');
+        }
+
+        function salvarVenda(e) {
+            e.preventDefault();
+            const id = document.getElementById('modalVenda').dataset.id;
+            const venda = {
+                cliente: parseInt(document.getElementById('vendaCliente').value),
+                produto: document.getElementById('vendaProduto').value,
+                quantidade: parseFloat(document.getElementById('vendaQuantidade').value),
+                valor: parseFloat(document.getElementById('vendaValor').value),
+                pagamento: document.getElementById('vendaPagamento').value,
+                data: document.getElementById('vendaData').value
+            };
+
+            if (id) {
+                app.updateVenda(parseInt(id), venda);
+            } else {
+                app.addVenda(venda);
+            }
+
+            closeVendaModal();
+            atualizarVendas();
+            atualizarDashboard();
+            showNotification('Venda salva com sucesso!', 'success');
+        }
+
+        function editarVenda(id) {
+            const venda = app.vendas.find(v => v.id === id);
+            if (!venda) return;
+
+            document.getElementById('vendaCliente').value = venda.cliente;
+            document.getElementById('vendaProduto').value = venda.produto;
+            document.getElementById('vendaQuantidade').value = venda.quantidade;
+            document.getElementById('vendaValor').value = venda.valor;
+            document.getElementById('vendaPagamento').value = venda.pagamento;
+            document.getElementById('vendaData').value = venda.data;
+            document.getElementById('modalVendaTitle').textContent = 'Editar Venda';
+            document.getElementById('modalVenda').classList.add('active');
+            document.getElementById('modalVenda').dataset.id = id;
+        }
+
+        function deletarVenda(id) {
+            if (confirm('Tem certeza que deseja deletar esta venda?')) {
+                app.deleteVenda(id);
+                atualizarVendas();
+                atualizarDashboard();
+                showNotification('Venda deletada!', 'success');
+            }
+        }
+
+        // ===== GASTOS =====
+        function atualizarGastos() {
+            const dataFilter = document.getElementById('filterDataGasto')?.value || '';
+            const tipoFilter = document.getElementById('filterTipoGasto')?.value || '';
+
+            let gastos = app.gastos;
+            if (dataFilter) gastos = gastos.filter(g => g.data === dataFilter);
+            if (tipoFilter) gastos = gastos.filter(g => g.tipo === tipoFilter);
+
+            if (gastos.length === 0) {
+                document.getElementById('gastosList').innerHTML = '';
+                document.getElementById('gastosEmpty').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('gastosEmpty').style.display = 'none';
+            const labels = {
+                ingredientes: 'Ingredientes',
+                gas: 'Gás',
+                embalagens: 'Embalagens',
+                transporte: 'Transporte',
+                outros: 'Outros'
+            };
+
+            const html = gastos.map(g => `
+                <tr>
+                    <td>${new Date(g.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                    <td><span class="badge badge-warning">${labels[g.tipo]}</span></td>
+                    <td><strong>R$ ${g.valor.toFixed(2)}</strong></td>
+                    <td>${g.observacoes || '-'}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn btn-small btn-primary" onclick="editarGasto(${g.id})">Editar</button>
+                            <button class="btn btn-small btn-danger" onclick="deletarGasto(${g.id})">Deletar</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('gastosList').innerHTML = html;
+            atualizarCounters();
+        }
+
+        function openGastoModal() {
+            document.getElementById('gastoTipo').value = '';
+            document.getElementById('gastoValor').value = '';
+            document.getElementById('gastoData').value = new Date().toISOString().split('T')[0];
+            document.getElementById('gastoObservacoes').value = '';
+            document.getElementById('modalGastoTitle').textContent = 'Novo Gasto';
+            document.getElementById('modalGasto').classList.add('active');
+            document.getElementById('modalGasto').dataset.id = '';
+        }
+
+        function closeGastoModal() {
+            document.getElementById('modalGasto').classList.remove('active');
+        }
+
+        function salvarGasto(e) {
+            e.preventDefault();
+            const id = document.getElementById('modalGasto').dataset.id;
+            const gasto = {
+                tipo: document.getElementById('gastoTipo').value,
+                valor: parseFloat(document.getElementById('gastoValor').value),
+                data: document.getElementById('gastoData').value,
+                observacoes: document.getElementById('gastoObservacoes').value
+            };
+
+            if (id) {
+                app.updateGasto(parseInt(id), gasto);
+            } else {
+                app.addGasto(gasto);
+            }
+
+            closeGastoModal();
+            atualizarGastos();
+            atualizarDashboard();
+            showNotification('Gasto salvo com sucesso!', 'success');
+        }
+
+        function editarGasto(id) {
+            const gasto = app.gastos.find(g => g.id === id);
+            if (!gasto) return;
+
+            document.getElementById('gastoTipo').value = gasto.tipo;
+            document.getElementById('gastoValor').value = gasto.valor;
+            document.getElementById('gastoData').value = gasto.data;
+            document.getElementById('gastoObservacoes').value = gasto.observacoes || '';
+            document.getElementById('modalGastoTitle').textContent = 'Editar Gasto';
+            document.getElementById('modalGasto').classList.add('active');
+            document.getElementById('modalGasto').dataset.id = id;
+        }
+
+        function deletarGasto(id) {
+            if (confirm('Tem certeza que deseja deletar este gasto?')) {
+                app.deleteGasto(id);
+                atualizarGastos();
+                atualizarDashboard();
+                showNotification('Gasto deletado!', 'success');
+            }
+        }
+
+        // ===== RELATÓRIOS =====
+        function atualizarRelatorios() {
+            const periodo = document.getElementById('filterPeriodo')?.value || 'mes';
+            let vendas = app.vendas;
+            let gastos = app.gastos;
+
+            const hoje = new Date();
+            let dataInicio = new Date();
+
+            if (periodo === 'dia') {
+                dataInicio.setDate(hoje.getDate());
+            } else if (periodo === 'semana') {
+                dataInicio.setDate(hoje.getDate() - 7);
+            } else if (periodo === 'mes') {
+                dataInicio.setMonth(hoje.getMonth());
+                dataInicio.setDate(1);
+            }
+
+            if (periodo !== 'todos') {
+                const dataInicioStr = dataInicio.toISOString().split('T')[0];
+                vendas = vendas.filter(v => v.data >= dataInicioStr);
+                gastos = gastos.filter(g => g.data >= dataInicioStr);
+            }
+
+            const totalVendas = vendas.reduce((sum, v) => sum + (v.quantidade * v.valor), 0);
+            const totalGastos = gastos.reduce((sum, g) => sum + g.valor, 0);
+            const lucro = totalVendas - totalGastos;
+            const margem = totalVendas > 0 ? ((lucro / totalVendas) * 100).toFixed(1) : 0;
+
+            document.getElementById('relTotalVendas').textContent = `R$ ${totalVendas.toFixed(2)}`;
+            document.getElementById('relTotalGastos').textContent = `R$ ${totalGastos.toFixed(2)}`;
+            document.getElementById('relLucro').textContent = `R$ ${lucro.toFixed(2)}`;
+            document.getElementById('relMargem').textContent = `${margem}%`;
+
+            // Vendas por pagamento
+            const pagamentos = {};
+            vendas.forEach(v => {
+                pagamentos[v.pagamento] = (pagamentos[v.pagamento] || 0) + (v.quantidade * v.valor);
+            });
+
+            const chartPag = Object.entries(pagamentos).map(([tipo, valor]) => {
+                const labels = { pix: 'Pix', dinheiro: 'Dinheiro', cartao: 'Cartão', fiado: 'Fiado' };
+                const percentual = ((valor / totalVendas) * 100).toFixed(1);
+                return `<div class="card">
+                    <div class="card-title">${labels[tipo] || tipo}</div>
+                    <div class="card-value">R$ ${valor.toFixed(2)}</div>
+                    <div style="color: #666; font-size: 12px;">${percentual}% do total</div>
+                </div>`;
+            }).join('');
+            document.getElementById('relPagamento').innerHTML = chartPag || '<div class="no-data">Sem dados</div>';
+
+            // Clientes que mais compram
+            const clientesCompras = {};
+            vendas.forEach(v => {
+                const nome = app.getClienteNome(v.cliente);
+                clientesCompras[nome] = (clientesCompras[nome] || 0) + (v.quantidade * v.valor);
+            });
+
+            const topClientes = Object.entries(clientesCompras)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            const chartClientes = topClientes.map(([nome, valor]) => `
+                <div class="card">
+                    <div class="card-title">${nome}</div>
+                    <div class="card-value">R$ ${valor.toFixed(2)}</div>
+                </div>
+            `).join('');
+            document.getElementById('relClientes').innerHTML = chartClientes || '<div class="no-data">Sem dados</div>';
+
+            // Gastos por tipo
+            const gastosTipo = {};
+            gastos.forEach(g => {
+                gastosTipo[g.tipo] = (gastosTipo[g.tipo] || 0) + g.valor;
+            });
+
+            const labels = {
+                ingredientes: 'Ingredientes',
+                gas: 'Gás',
+                embalagens: 'Embalagens',
+                transporte: 'Transporte',
+                outros: 'Outros'
+            };
+
+            const chartGastos = Object.entries(gastosTipo).map(([tipo, valor]) => `
+                <div class="card">
+                    <div class="card-title">${labels[tipo]}</div>
+                    <div class="card-value">R$ ${valor.toFixed(2)}</div>
+                </div>
+            `).join('');
+            document.getElementById('relGastos').innerHTML = chartGastos || '<div class="no-data">Sem dados</div>';
+        }
+
+        // ===== EXPORTAÇÃO =====
+        function exportarPDF() {
+            const periodo = document.getElementById('filterPeriodo')?.value || 'mes';
+            let vendas = app.vendas;
+            let gastos = app.gastos;
+
+            const hoje = new Date();
+            let dataInicio = new Date();
+
+            if (periodo === 'dia') {
+                dataInicio.setDate(hoje.getDate());
+            } else if (periodo === 'semana') {
+                dataInicio.setDate(hoje.getDate() - 7);
+            } else if (periodo === 'mes') {
+                dataInicio.setMonth(hoje.getMonth());
+                dataInicio.setDate(1);
+            }
+
+            if (periodo !== 'todos') {
+                const dataInicioStr = dataInicio.toISOString().split('T')[0];
+                vendas = vendas.filter(v => v.data >= dataInicioStr);
+                gastos = gastos.filter(g => g.data >= dataInicioStr);
+            }
+
+            const totalVendas = vendas.reduce((sum, v) => sum + (v.quantidade * v.valor), 0);
+            const totalGastos = gastos.reduce((sum, g) => sum + g.valor, 0);
+            const lucro = totalVendas - totalGastos;
+
+            let html = `
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Relatório - Pães Caseiros</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1 { color: #d4a574; }
+                        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                        th { background: #d4a574; color: white; }
+                        .summary { background: #f9f5f0; padding: 15px; margin: 20px 0; border-radius: 5px; }
+                        .summary-item { margin: 10px 0; font-size: 16px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Relatório de Pães Caseiros</h1>
+                    <p>Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}</p>
+                    
+                    <div class="summary">
+                        <div class="summary-item"><strong>Total de Vendas:</strong> R$ ${totalVendas.toFixed(2)}</div>
+                        <div class="summary-item"><strong>Total de Gastos:</strong> R$ ${totalGastos.toFixed(2)}</div>
+                        <div class="summary-item"><strong>Lucro Líquido:</strong> R$ ${lucro.toFixed(2)}</div>
+                    </div>
+
+                    <h2>Vendas</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Cliente</th>
+                                <th>Produto</th>
+                                <th>Quantidade</th>
+                                <th>Valor Unit.</th>
+                                <th>Total</th>
+                                <th>Pagamento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            vendas.forEach(v => {
+                const total = v.quantidade * v.valor;
+                const labels = { pix: 'Pix', dinheiro: 'Dinheiro', cartao: 'Cartão', fiado: 'Fiado' };
+                html += `
+                    <tr>
+                        <td>${new Date(v.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                        <td>${app.getClienteNome(v.cliente)}</td>
+                        <td>${v.produto}</td>
+                        <td>${v.quantidade}</td>
+                        <td>R$ ${v.valor.toFixed(2)}</td>
+                        <td>R$ ${total.toFixed(2)}</td>
+                        <td>${labels[v.pagamento]}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+
+                    <h2>Gastos</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            const tiposLabel = {
+                ingredientes: 'Ingredientes',
+                gas: 'Gás',
+                embalagens: 'Embalagens',
+                transporte: 'Transporte',
+                outros: 'Outros'
+            };
+
+            gastos.forEach(g => {
+                html += `
+                    <tr>
+                        <td>${new Date(g.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                        <td>${tiposLabel[g.tipo]}</td>
+                        <td>R$ ${g.valor.toFixed(2)}</td>
+                        <td>${g.observacoes || '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `relatorio-paes-${new Date().toISOString().split('T')[0]}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showNotification('Relatório PDF exportado!', 'success');
+        }
+
+        function exportarExcel() {
+            const periodo = document.getElementById('filterPeriodo')?.value || 'mes';
+            let vendas = app.vendas;
+            let gastos = app.gastos;
+
+            const hoje = new Date();
+            let dataInicio = new Date();
+
+            if (periodo === 'dia') {
+                dataInicio.setDate(hoje.getDate());
+            } else if (periodo === 'semana') {
+                dataInicio.setDate(hoje.getDate() - 7);
+            } else if (periodo === 'mes') {
+                dataInicio.setMonth(hoje.getMonth());
+                dataInicio.setDate(1);
+            }
+
+            if (periodo !== 'todos') {
+                const dataInicioStr = dataInicio.toISOString().split('T')[0];
+                vendas = vendas.filter(v => v.data >= dataInicioStr);
+                gastos = gastos.filter(g => g.data >= dataInicioStr);
+            }
+
+            let csv = 'VENDAS\n';
+            csv += 'Data,Cliente,Produto,Quantidade,Valor Unitário,Total,Forma de Pagamento\n';
+
+            vendas.forEach(v => {
+                const total = v.quantidade * v.valor;
+                const labels = { pix: 'Pix', dinheiro: 'Dinheiro', cartao: 'Cartão', fiado: 'Fiado' };
+                csv += `"${new Date(v.data + 'T00:00:00').toLocaleDateString('pt-BR')}","${app.getClienteNome(v.cliente)}","${v.produto}",${v.quantidade},${v.valor.toFixed(2)},${total.toFixed(2)},"${labels[v.pagamento]}"\n`;
+            });
+
+            csv += '\n\nGASTOS\n';
+            csv += 'Data,Tipo,Valor,Observações\n';
+
+            const tiposLabel = {
+                ingredientes: 'Ingredientes',
+                gas: 'Gás',
+                embalagens: 'Embalagens',
+                transporte: 'Transporte',
+                outros: 'Outros'
+            };
+
+            gastos.forEach(g => {
+                csv += `"${new Date(g.data + 'T00:00:00').toLocaleDateString('pt-BR')}","${tiposLabel[g.tipo]}",${g.valor.toFixed(2)},"${g.observacoes || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `relatorio-paes-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showNotification('Relatório Excel exportado!', 'success');
+        }
+
+        // ===== CONFIGURAÇÕES =====
+        function atualizarConfiguracoes() {
+            atualizarCounters();
+        }
+
+        function atualizarCounters() {
+            document.getElementById('countClientes').textContent = app.clientes.length;
+            document.getElementById('countVendas').textContent = app.vendas.length;
+            document.getElementById('countGastos').textContent = app.gastos.length;
+        }
+
+        function fazerBackup() {
+            const backup = app.backup();
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup-paes-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showNotification('Backup realizado com sucesso!', 'success');
+        }
+
+        function restaurarBackup() {
+            document.getElementById('backupFile').click();
+        }
+
+        document.getElementById('backupFile')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    app.restore(data);
+                    atualizarTodasAsSecoes();
+                    showNotification('Backup restaurado com sucesso!', 'success');
+                } catch (err) {
+                    showNotification('Erro ao restaurar backup!', 'danger');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function limparTodosDados() {
+            if (confirm('⚠️ ATENÇÃO: Isso vai deletar TODOS os dados. Tem certeza?')) {
+                if (confirm('Tem MUITA certeza? Essa ação não pode ser desfeita!')) {
+                    app.clear();
+                    atualizarTodasAsSecoes();
+                    showNotification('Todos os dados foram deletados!', 'success');
+                }
+            }
+        }
+
+        // ===== NOTIFICAÇÕES =====
+        function showNotification(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `alert alert-${type}`;
+            div.textContent = message;
+            document.querySelector('.content').insertBefore(div, document.querySelector('.content').firstChild);
+            setTimeout(() => div.remove(), 3000);
+        }
+
+        // ===== INICIALIZAÇÃO =====
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarDispositivo();
+            
+            // Verificar se há parâmetro de sala na URL (por QR code)
+            const params = new URLSearchParams(window.location.search);
+            const sala = params.get('sala');
+            if (sala && !codigoSala) {
+                document.getElementById('codigoSalaInput').value = sala;
+                document.getElementById('nomeDispositivo').value = 'Dispositivo';
+            }
+
+            atualizarClientes();
+            atualizarVendas();
+            atualizarGastos();
+            atualizarConfiguracoes();
+            atualizarDashboard();
+            
+            // Fechar modais ao clicar fora
+            document.getElementById('modalCliente').addEventListener('click', function(e) {
+                if (e.target === this) closeClientModal();
+            });
+            document.getElementById('modalVenda').addEventListener('click', function(e) {
+                if (e.target === this) closeVendaModal();
+            });
+            document.getElementById('modalGasto').addEventListener('click', function(e) {
+                if (e.target === this) closeGastoModal();
+            });
+
+            // Busca em tempo real
+            document.getElementById('searchCliente')?.addEventListener('input', atualizarClientes);
+        });
+    </script>
+</body>
+</html>
